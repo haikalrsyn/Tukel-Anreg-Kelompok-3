@@ -1,0 +1,302 @@
+---
+title: "Tugas Kelompok Analisis Regresi - Kelompok 3"
+author: "Muhammad Haikal Rasyadan, Raihana Asma Amani, Delita Nur Hasanah"
+date: "2024-02-08"
+output:
+  output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(ggridges)
+library(GGally) 
+library(plotly)
+```
+
+## Data
+
+Analisis ini bertujuan untuk mengetahui hubungan antara umur (x) dan kadar kolesterol (y) dalam memperkirakan risiko penyakit jantung. Umur dipilih sebagai variabel independen karena diasumsikan berkorelasi dengan kadar kolesterol seiring bertambahnya usia, sementara kadar kolesterol dipilih karena perannya yang signifikan dalam mengevaluasi risiko penyakit jantung.
+
+Analisis menggunakan model regresi linier sederhana untuk memahami dampak umur terhadap kadar kolesterol, dengan tujuan memperoleh wawasan lebih lanjut tentang hubungan tersebut dan implikasinya terhadap kesehatan.
+
+```{r}
+data <- read.csv("/Users/user/Downloads/Documents/Anreg 📈/Heart_Disease_Prediction.csv", sep=",")
+y<-data$Cholesterol
+x<-data$Age
+n <- nrow(data)
+n
+data<-data.frame(cbind(y,x))
+head(data)
+```
+
+## Pembentukan Model
+
+```{r}
+model <- lm(y~x, data)
+model
+summary(model)
+```
+
+Berdasarkan pemodelan dengan fungsi lm, didapatkan estimasi persamaan regresi linier yang juga dapat disebut sebagai nilai perkiraan dari variabel respons Y, sebagai berikut:
+
+$$
+E[Ŷ]= Ŷ = 181.6920 + 1.2486x
+$$
+
+Hasil regresi menunjukkan adanya hubungan positif antara umur dan kadar kolesterol, yang mengindikasikan bahwa semakin panjang umur seseorang, semakin tinggi kemungkinannya memiliki kadar kolesterol yang lebih tinggi juga. Intersep pada nilai 181,6920 menunjukkan bahwa jika umur adalah 0 (baru lahir), maka kadar kolesterol seseorang diprediksi memiliki nilai sebesar 181,6920. Kemiringan sebesar 1,2486 diduga mengindikasikan bahwa setiap bertambahnya umur akan diikuti dengan peningkatan sebesar 1,2486 rata-rata kadar kolesterol seseorang.
+
+## Visualisasi Scatter Plot
+
+```{r}
+y.bar <- mean(y)
+interactive.plot <- ggplot(model) +
+  geom_point(aes(x = x,y = y),color="steelblue",shape=8, size=1) +
+  geom_smooth(aes(x = x, y = y), method = "lm", se = FALSE, color = "grey") +
+  ggtitle("Scatter Plot Umur vs Kadar Kolesterol") +
+  ylab("Kadar Kolesterol") +
+  xlab("Umur") + 
+  theme_classic() +
+  theme(plot.title = element_text(hjust = 0.5))
+ggplotly(interactive.plot)
+```
+
+## Penguraian Keragaman
+
+Dari scatter plot diatas, terlihat adanya penyimpangan relatif dari nilai harapan untuk setiap pengamatan. penyimpangan relatif ini dikenal sebagai galat. keragaman dari galat untuk setiap pengamatan dapat diuraikan berdasarkan garis dugaan persamaan (Ŷ) dan garis rata-rata respons (Ȳ). Penguraian keragaman ini terbagi menjadi Jumlah Kuadrat Regresi (JKR), Jumlah Kuadrat Galat (JKG), dan Jumlah Kuadrat Total (JKT), dengan perhitungan yang sesuai.
+
+```{r}
+knitr::include_graphics("/Users/user/Downloads/penguraian keragaman.png")
+```
+
+Hubungan antara ketiganya dapat pula dituliskan sebagai berikut.
+
+$$
+JKT = JKR + JKG
+$$
+
+Nilai penguraian keragaman ini dapat dilihat menggunakan fungsi anova, sebagai berikut:
+
+```{r}
+(anova.model <- anova(model))
+```
+
+berdasarkan perhitungan ANOVA diatas, dapat diketahui nilai Jumlah Kuadrat Rataan (JKR) sebesar 34799 dan Jumlah Kuadrat Galat (JKG) sebesar 683825.
+
+### Ragam Galat/Error
+
+```{r}
+knitr::include_graphics("/Users/user/Downloads/ragam galat.png")
+```
+
+```{r}
+(KTG <- anova.model$`Mean Sq`[2])
+```
+
+### Galat Baku
+
+$$
+se=√se^2
+$$
+
+Oleh karena simpangan baku merupakan akar kuadrat dari ragam, maka nilai dugaan galat baku model yang kita bentuk adalah:
+
+```{r}
+(galat.baku <- sqrt(KTG))
+```
+
+Berdasarkan perhitungan diatas didapatkan hasil sebagai berikut:
+
+$JKR$ = 34799
+
+$JKG$ = 683825
+
+$KTG$ = 2551.587
+
+$s_e$ = 50.51324
+
+## Keragaman Dugaan Parameter
+
+## Dugaan Parameter $β_1$
+
+Hipotesis uji:
+
+$H_0$:$β_1$ = 0 (Kadar kolesterol tidak memiliki hubungan hubungan linear dengan faktor umur)
+
+$H_1$:$β_1$ ≠ 0 (Kadar kolesterol memiliki hubungan hubungan linear dengan faktor umur)
+
+```{r}
+b1<-(sum(x*y)-sum(x)*sum(y)/n)/(sum(x^2)-(sum(x)^2/n))
+b1
+```
+
+Dengan nilai slope (b1) sebesar 1.248633, selanjutnya akan dilakukan uji apakah faktor umur (x) memiliki pengaruh yang signifikan terhadap kadar kolesterol (y) dalam hubungan linier atau tidak.
+
+```{r}
+knitr::include_graphics("/Users/user/Downloads/b1.png")
+```
+
+Nilai $Sβ_1$ dapat dihitung dengan sintaks sebagai berikut.
+
+```{r}
+(se_b1 <- sqrt(KTG/sum((x-mean(x))^2)))
+(t_b1 <- b1/se_b1)
+```
+
+statistik uji:
+
+```{r}
+p_valueb1 <- 2*pt(-abs(t_b1 ),df<-n-2)
+p_valueb1
+```
+
+Kaidah Keputusan:
+
+Karena p-value(0.0002685531) \< 0.05 maka tolak H0. Oleh karena itu, hal ini menunjukkan terdapat cukup bukti untuk menytakan adanya hubungan linier antara faktor umur (x) dan kadar kolesterol (y). Hal tersebut juga memberikan bukti yang cukup untuk menyatakan bahwa faktor umur memengaruhi kadar kolesterol pada taraf nyata 5%.
+
+### Dugaan Parameter $β_0$
+
+Hipotesis uji:
+
+$H_0$:$β_0$ = 0 (Semua nilai kadar kolesterol dapat dijelaskan oleh faktor umur)
+
+$H_1$:$β_0$ ≠ 0 (Ada nilai kadar kolesterol yang tidak dapat dijelaskan oleh faktor umur)
+
+```{r}
+b0<-mean(y)-b1*mean(x)
+b0
+```
+
+Dengan menggunakan data yang sama bersama dengan nilai intersep (b0) sebesar 181.692, akan dilakukan uji apakah ada variasi dalam Kadar Kolesterol (y) yang tidak dapat dijelaskan oleh faktor Umur (x).
+
+```{r}
+knitr::include_graphics("/Users/user/Downloads/b0.png")
+```
+
+```{r}
+(se_b0 <- sqrt(KTG*(1/n+mean(x)^2/sum((x-mean(x))^2))))
+(t_b0 <- b0/se_b0)
+```
+
+statistik uji:
+
+```{r}
+p_valueb0 <- 2*pt(-abs(t_b0 ),df<-n-2)
+p_valueb0
+```
+
+Kaidah Keputusan:
+
+Karena p-value(2.221061e-19) \< 0.05 maka tolak H0. Oleh karena itu, hal ini menunjukkan terdapat cukup bukti untuk menyatakan adanya nilai kadar kolesterol (y) yang tidak dapat dijelaskan oleh faktor umur (x) pada taraf nyata 5%.
+
+## Uji Korelasi dan Koefisien Determinasi
+
+Uji Korelasi:
+
+```{r}
+r<-(sum(x*y)-sum(x)*sum(y)/n)/
+sqrt((sum(x^2)-(sum(x)^2/n))*(sum(y^2)-(sum(y)^2/n)))
+r
+```
+
+Uji Koefisien Determinasi:
+
+```{r}
+Koef_det<-r^2
+Koef_det
+```
+
+Dengan korelasi sebesar 0.2200563 dan koefisien determinasi sebesar 0.04842478, terdapat hubungan positif yang lemah antara faktor umur dan kadar kolesterol serta sekitar 4.842478% variasi dalam kadar kolesterol dapat dijelaskan oleh variasi dalam faktor umur.
+
+## Penduga Selang Kepercayaan Parameter Model
+
+```{r}
+knitr::include_graphics("/Users/user/Downloads/sk.png")
+```
+
+Penduga selang kepercayaan 95% bagi $β_1$:
+
+```{r}
+#Batas Atas beta_1
+(ba.b1 <- b1 + abs(qt(0.025, df=n-2))*se_b1)
+#Batas Bawah beta1
+(bb.b1 <- b1 - abs(qt(0.025, df=n-2))*se_b1)
+```
+
+Penduga selang kepercayaan 95% bagi $β_0$:
+
+```{r}
+#Batas Atas beta_0
+(ba.b0 <- b0 + abs(qt(0.025, df=n-2))*se_b0)
+#Batas Bawah beta0
+(bb.b0 <- b0 - abs(qt(0.025, df=n-2))*se_b0)
+```
+
+Sehingga dapat disusun suatu selang kepercayaan untuk $β_0$ dan $β_1$ sebagai berikut:
+
+0.5829478\< $β_1$ \<1.914318
+
+Yang dapat dimaknai bahwa dalam taraf kepercayaan 95%, diyakini bahwa dugaan parameter $β_1$ berada dalam selang 0.5829478 hingga 1.914318
+
+144.9545\< $β_0$ \<218.4295
+
+Yang dapat dimaknai bahwa dalam taraf kepercayaan 95%, diyakini bahwa dugaan parameter $β_0$ berada dalam selang 144.9545 hingga 218.4295
+
+## Selang Kepercayaan Amatan
+
+Misalkan ingin menduga nilai rataan (harapan) amatan $X$ = 50. Penduga selang kepercayaan 95% bagi rataan (nilai harapan) tersebut adalah:
+
+```{r}
+knitr::include_graphics("/Users/user/Downloads/rataan amatan.png")
+```
+
+```{r}
+dugaan.amatan <- data.frame(x=50)
+dugaan.amatan
+predict(model, dugaan.amatan, interval = "confidence")
+```
+
+Penduga selang kepercayaan 95% bagi Individu amatan $X$ = 50:
+
+```{r}
+knitr::include_graphics("/Users/user/Downloads/individu amatan.png")
+```
+
+```{r}
+predict(model, dugaan.amatan, interval = "prediction")
+```
+
+Sehingga dapat disusun suatu selang kepercayaan 95% untuk $E(Ŷ|x_0)$ dan $ŷ(x_i)$ dan nilai $X$ = 50 sebagai berikut:
+
+237.3899\< $E(Ŷ|x_0)$ \<250.8574
+
+Yang dapat dimaknai bahwa dalam taraf kepercayaan 95%, diyakini bahwa dugaan nilai rataan (harapan) amatan $X$ = 50 berada dalam selang 237.3899 hingga 250.8574
+
+144.4427\< $ŷ(x_i)$ \<343.8046
+
+Yang dapat dimaknai bahwa dalam taraf kepercayaan 95%, diyakini bahwa dugaan nilai individu amatan $X$ = 50 berada dalam selang 144.4427 hingga \<343.804
+
+## Tabel Sidik Ragam
+
+```{r}
+dbr <- 1
+dbg <- n-2
+dbt <- n-1
+JKR <- 34799
+JKG <- 683825
+JKT <- JKR+JKG
+KTR <- JKR/dbr
+```
+
+```{r}
+SK <- c("Regresi", "Galat", "Total")
+db <- c(dbr, dbg, dbt)
+JK <- c(JKR, JKG, JKT)
+KT <- c(KTR, KTG, NA)
+data_frame <- data.frame(SK, db, JK, KT)
+data_frame
+
+```
+
+## Kesimpulan
+
+Berdasarkan analisis yang kami lakukan, terdapat hubungan positif antara usia dan kadar kolesterol dalam tubuh, yang mengindikasikan bahwa semakin seseorang bertambah usia, maka kemungkinan tinggi juga kadar kolesterolnya. Hal ini menunjukkan adanya risiko yang lebih besar terhadap penyakit jantung. Namun, penting untuk dicatat bahwa faktor usia hanya menjelaskan sebagian kecil dari variasi dalam kadar kolesterol seseorang. Faktor-faktor lain seperti pola makan, aktivitas fisik, dan faktor gaya hidup lainnya juga berperan penting. Oleh karena itu, solusi yang kami rekomendasikan dari hasil analisis ini adalah untuk menjaga kesehatan tubuh dengan menerapkan pola hidup sehat, termasuk pola makan seimbang, rutin berolahraga, mengelola stres dengan baik, menghindari merokok, serta menghindari konsumsi alkohol.
